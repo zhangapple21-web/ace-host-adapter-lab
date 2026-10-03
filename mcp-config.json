@@ -1,0 +1,9 @@
+{
+  "mcpServers": {
+    "ace-readonly": {
+      "command": "C:\\tmp\\ace-host-adapter-lab\\.venv\\Scripts\\python.exe",
+      "args": ["-B", "C:\\tmp\\ace-host-adapter-lab\\ace_mcp_server.py", "--ace-root", "C:\\tmp\\ace_core"],
+      "env": {"PYTHONDONTWRITEBYTECODE": "1"}
+    }
+  }
+}

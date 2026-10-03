@@ -1,0 +1,53 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+.venv/
+venv/
+env/
+pip-wheel-metadata/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Test artifacts
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Logs
+*.log
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Local config
+ace_bridge_config.json
+
+# Proof/report outputs (generated at runtime)
+runtime-adapter-proof*.json
+runtime-adapter-report.json
+free-model-ace-smoke-report.json
+ACE_AUDIT_TASKLIST.md
+
+# Temporary test files
+test_requests.jsonl
+test_health.jsonl
+tmp_test_ace/
+
+# Opencode source copy (large, not needed in repo)
+opencode-v2.0.22-source/
+
+# Video/assets (large binary files)
+ace-video-assets/
+
+# Evidence/backup folders (large)
+ace_evidence_20260911_v2/
+ace_recovery_evidence/
+ace_qwen_cli_session/
