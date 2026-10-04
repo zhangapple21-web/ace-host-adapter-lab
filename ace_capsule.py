@@ -146,9 +146,15 @@ def invoke(request: dict[str, Any], config: BridgeConfig = None) -> dict[str, An
         return _refuse_resp(ErrorCodes.INVALID_ARGUMENTS, str(error))
     
     try:
+        # stdin=DEVNULL also forces close_fds=True on Windows. Without it the
+        # child inherits this host's stdio pipe handles, and if any grandchild
+        # keeps one open, communicate() blocks until timeout even though the CLI
+        # already finished. Measured: capsule calls ran the full 180s timeout from
+        # an MCP host while the identical call took ~130ms standalone.
         result = subprocess.run(
             argv, cwd=str(config.ace_root), capture_output=True, text=True, encoding="utf-8",
             errors="replace", timeout=config.cli_timeout, check=False,
+            stdin=subprocess.DEVNULL,
             env={**os.environ, "PYTHONIOENCODING": "utf-8", "PYTHONDONTWRITEBYTECODE": "1"},
         )
     except subprocess.TimeoutExpired as e:
