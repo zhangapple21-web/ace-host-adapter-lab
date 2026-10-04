@@ -7,6 +7,18 @@ from pathlib import Path
 from typing import Optional
 
 
+def _env_int(name: str, fallback: int) -> int:
+    """Read a positive integer from the environment, else use fallback."""
+    raw = os.environ.get(name)
+    if raw is None or not str(raw).strip():
+        return fallback
+    try:
+        value = int(str(raw).strip())
+    except (TypeError, ValueError):
+        return fallback
+    return value if value > 0 else fallback
+
+
 @dataclass
 class BridgeConfig:
     """Centralized configuration with environment variable and JSON file support."""
@@ -20,7 +32,9 @@ class BridgeConfig:
     
     # 限制
     max_snapshot_size: int = 1024 * 1024  # 1 MiB
-    cli_timeout: int = 60  # seconds
+    # seconds; raise on loaded hosts so transient CPU contention is not
+    # misreported as a capsule defect
+    cli_timeout: int = field(default_factory=lambda: _env_int("ACE_BRIDGE_CLI_TIMEOUT", 60))
     default_limit: int = 20
     max_limit: int = 100
     query_max_len: int = 256
@@ -40,7 +54,11 @@ class BridgeConfig:
     health_check_enabled: bool = True
     
     # 指标
-    metrics_enabled: bool = False
+    # Must stay True: ace_metrics is a registered tool, and with this off
+    # MetricsCollector.record_* is a permanent no-op so the tool could only ever
+    # return empty counters. Keys are "<action>:<status>" / "<action>:<error_code>",
+    # bounded by the action set and the error-code enum, so growth is bounded.
+    metrics_enabled: bool = True
     metrics_port: int = 9090
     
     # 缓存

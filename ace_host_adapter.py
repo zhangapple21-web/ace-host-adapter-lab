@@ -166,6 +166,12 @@ def handle(request: dict[str, Any], ace_root: Path, config: BridgeConfig = None)
         if request_id and host_id and action:
             log_error(logger, request_id, code, message)
             log_response(logger, request_id, "REFUSED")
+        # 单一插桩点：handle() 里每一条拒绝路径都汇聚到这里，包括那些绕过下方
+        # 计时段落的提前 return（协议不符、速率限制、mutation 禁用、参数非法等）。
+        # 缺了这里 errors_total 永远是空的，拒绝请求也从不进 requests_total。
+        _metric_action = action if isinstance(action, str) and action else "unknown"
+        record_error_metric(_metric_action, code, config)
+        record_metric(_metric_action, "REFUSED", time.perf_counter() - start_time, config)
         # 向后兼容：保留 reason 字段
         base = refuse(code, message, retryable, details)
         base["reason"] = message  # 兼容旧版本
@@ -263,8 +269,9 @@ def handle(request: dict[str, Any], ace_root: Path, config: BridgeConfig = None)
         duration_ms = (time.perf_counter() - start_time) * 1000
         log_timing(logger, request_id, action, duration_ms)
         log_response(logger, request_id, resp.get("status", "UNKNOWN"))
-        # 记录指标
-        record_metric(action, resp.get("status", "UNKNOWN"), duration_ms / 1000.0, config)
+        # 记录指标；拒绝路径已在 _refuse_response 内记录，此处跳过以免重复计数
+        if "error" not in resp:
+            record_metric(action, resp.get("status", "UNKNOWN"), duration_ms / 1000.0, config)
     
     return resp
 
@@ -283,16 +290,23 @@ def main(argv: list[str] | None = None) -> int:
     import threading
     import queue
     
-    stdin_queue: queue.Queue[str] = queue.Queue()
+    stdin_queue: queue.Queue = queue.Queue()
     read_timeout = 300  # 5分钟全局读取超时
     eof_event = threading.Event()  # 标记 EOF
+    _EOF = object()  # 队列哨兵：EOF 时唤醒阻塞中的 get()
     
     def stdin_reader():
-        for line in sys.stdin:
-            if eof_event.is_set():
-                break
-            stdin_queue.put(line)
-        eof_event.set()  # EOF 时标记
+        try:
+            for line in sys.stdin:
+                if eof_event.is_set():
+                    break
+                stdin_queue.put(line)
+        finally:
+            # EOF 必须同时唤醒主循环。只 set() 事件而不投递哨兵的话，主循环仍阻塞在
+            # stdin_queue.get(timeout=300) 上，要等满 read_timeout 才复查 eof_event ——
+            # 实测响应早已打印，进程却再挂 300 秒才退出，宿主侧每个调用都会超时。
+            eof_event.set()
+            stdin_queue.put(_EOF)
     
     reader_thread = threading.Thread(target=stdin_reader, daemon=True)
     reader_thread.start()
@@ -308,6 +322,8 @@ def main(argv: list[str] | None = None) -> int:
                 break
             logger.warning("stdin_read_timeout", extra={"timeout_seconds": read_timeout})
             continue
+        if line is _EOF:
+            break
         if not line.strip():
             continue
         try:
