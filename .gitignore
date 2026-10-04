@@ -22,6 +22,8 @@ htmlcov/
 
 # Logs
 *.log
+# Runtime-generated rotation logs (append-only, regenerated per run)
+*-rotation-log.jsonl
 
 # OS
 .DS_Store
