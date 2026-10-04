@@ -38,8 +38,14 @@ class CapsuleBridgeTests(unittest.TestCase):
         self.assertEqual(rendered["status"], "CAPSULE_READY")
         submitted = invoke({"command": "submit", "pool": "scratch", "scratch_name": name, "task_id": task.task_id, "claim": started["claim_id"], "token": started["fencing_token"], "actor": "pi-bridge", "capsule_hash": rendered["capsule_hash"], "payload": {"summary": "bridge drill complete", "facts": ["existing CLI accepted the result"], "transition": "review"}})
         self.assertEqual(submitted["status"], "SUBMITTED")
-        self.assertEqual(invoke({"command": "execute", "pool": "scratch", "scratch_name": name})["reason"], "unknown_or_disabled_command")
-        self.assertEqual(invoke({"command": "list-pending", "pool": "elsewhere"})["reason"], "pool_must_be_production_or_scratch")
+        refused_execute = invoke({"command": "execute", "pool": "scratch", "scratch_name": name})
+        self.assertEqual(refused_execute["status"], "REFUSED")
+        self.assertEqual(refused_execute["error"]["code"], "INVALID_COMMAND")
+        self.assertEqual(refused_execute["error"]["message"], "unknown_or_disabled_command")
+        refused_pool = invoke({"command": "list-pending", "pool": "elsewhere"})
+        self.assertEqual(refused_pool["status"], "REFUSED")
+        self.assertEqual(refused_pool["error"]["code"], "INVALID_ARGUMENTS")
+        self.assertEqual(refused_pool["error"]["message"], "pool_must_be_production_or_scratch")
 
 
 if __name__ == "__main__":
