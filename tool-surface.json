@@ -1,0 +1,109 @@
+{
+  "$comment": "Single source of truth for the ACE Read-only Bridge tool contract. main.js loads this at runtime, manifest.json mirrors it for the PI plugin host, and test_tool_surface.py asserts the Python MCP server agrees. Changing the surface here and re-running the tests is the only supported way to add or rename a tool.",
+  "protocol": "ace.host_adapter.v0",
+  "surface_version": "1.1.0",
+  "limits": {
+    "task_limit_min": 1,
+    "task_limit_max": 100,
+    "query_max_len": 256,
+    "default_limit": 20
+  },
+  "timeouts_ms": {
+    "request_default": 15000,
+    "cli_default": 60000,
+    "$comment": "cli_default is overridden by ACE_BRIDGE_CLI_TIMEOUT, which pi-plugin/main.js and bridge_config.py both read."
+  },
+  "mutation_policy": "fail_closed",
+  "read_tool_count": 9,
+  "tool_count": 10,
+  "read_tools": [
+    {
+      "name": "ace_capabilities",
+      "action": "capabilities",
+      "risk": "low",
+      "description": "Query ACE bridge capabilities. Read actions do not prove liveness or authorize writes.",
+      "schema": {"type": "object", "properties": {}, "additionalProperties": false}
+    },
+    {
+      "name": "ace_status",
+      "action": "status",
+      "risk": "low",
+      "description": "Query ACE persisted status. This does not prove daemon liveness.",
+      "schema": {"type": "object", "properties": {}, "additionalProperties": false}
+    },
+    {
+      "name": "ace_tasks",
+      "action": "tasks",
+      "risk": "low",
+      "description": "Query bounded ACE task summaries without task bodies or credentials.",
+      "schema": {"type": "object", "properties": {"limit": {"type": "integer", "minimum": 1, "maximum": 100}}, "additionalProperties": false}
+    },
+    {
+      "name": "ace_learning",
+      "action": "learning",
+      "risk": "low",
+      "description": "Read ACE self-evolution snapshot metadata. Read-only; does not prove liveness.",
+      "schema": {"type": "object", "properties": {}, "additionalProperties": false}
+    },
+    {
+      "name": "ace_archaeology",
+      "action": "archaeology",
+      "risk": "low",
+      "description": "Read bounded archaeology state and append-only lineage receipts.",
+      "schema": {"type": "object", "properties": {}, "additionalProperties": false}
+    },
+    {
+      "name": "ace_governance",
+      "action": "governance",
+      "risk": "low",
+      "description": "Read bounded governance snapshot metadata. No policy mutation.",
+      "schema": {"type": "object", "properties": {}, "additionalProperties": false}
+    },
+    {
+      "name": "ace_query",
+      "action": "query",
+      "risk": "low",
+      "description": "Directly query bounded ACE cognition results for map, library, lineage, capability, status, tasks, history, and relations.",
+      "schema": {"type": "object", "required": ["query"], "properties": {"query": {"type": "string", "maxLength": 256}, "query_type": {"type": "string"}, "limit": {"type": "integer", "minimum": 1, "maximum": 100}}, "additionalProperties": false}
+    },
+    {
+      "name": "ace_health",
+      "action": "health",
+      "risk": "low",
+      "description": "Health check endpoint for liveness/readiness probes.",
+      "schema": {"type": "object", "properties": {}, "additionalProperties": false}
+    },
+    {
+      "name": "ace_metrics",
+      "action": "metrics",
+      "risk": "low",
+      "description": "Return collected metrics (request counts, latency, errors).",
+      "schema": {"type": "object", "properties": {}, "additionalProperties": false}
+    }
+  ],
+  "capsule_tool": {
+    "name": "ace_capsule",
+    "risk": "low",
+    "read_only": false,
+    "description": "Run one existing ACE worker-capsule command. ACE validates credentials and pool face.",
+    "schema": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["command"],
+      "properties": {
+        "command": {"type": "string", "enum": ["list-pending", "show", "recover", "reclaim", "start", "render", "renew", "submit", "fail"]},
+        "pool": {"type": "string", "enum": ["production", "scratch"]},
+        "scratch_name": {"type": "string"},
+        "task_id": {"type": "string"},
+        "owner": {"type": "string"},
+        "actor": {"type": "string"},
+        "claim": {"type": "string"},
+        "token": {"type": "integer"},
+        "reason": {"type": "string"},
+        "failure_type": {"type": "string", "enum": ["retryable", "permanent", "manual_gate", "external_condition"]},
+        "capsule_hash": {"type": "string"},
+        "payload": {"type": "object"}
+      }
+    }
+  }
+}

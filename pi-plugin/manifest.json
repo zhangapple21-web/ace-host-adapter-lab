@@ -2,24 +2,203 @@
   "schemaVersion": 1,
   "id": "local.ace-readonly",
   "name": "ACE Read-only Bridge",
-  "version": "0.3.0",
-  "description": "PI tools for ACE status and the existing worker-capsule port. ACE remains authoritative.",
+  "version": "0.4.0",
+  "description": "PI tools for the ACE read-only bridge surface defined in tool-surface.json. ACE remains authoritative.",
   "main": "main.js",
-  "permissions": ["agent.tool.register"],
-  "engines": {"piDesktop": ">=0.1.0"},
-  "activationEvents": ["onStartup"],
+  "permissions": [
+    "agent.tool.register"
+  ],
+  "engines": {
+    "piDesktop": ">=0.1.0"
+  },
+  "activationEvents": [
+    "onStartup"
+  ],
   "contributes": {
     "agentTools": [
-      {"name": "ace_capabilities", "description": "Query ACE bridge capabilities. Read actions do not prove liveness or authorize writes.", "risk": "low", "schema": {"type": "object", "properties": {}, "additionalProperties": false}},
-      {"name": "ace_status", "description": "Query ACE persisted status. This does not prove daemon liveness.", "risk": "low", "schema": {"type": "object", "properties": {}, "additionalProperties": false}},
-      {"name": "ace_tasks", "description": "Query bounded ACE task summaries without task bodies or credentials.", "risk": "low", "schema": {"type": "object", "properties": {"limit": {"type": "integer", "minimum": 1, "maximum": 100}}, "additionalProperties": false}},
-      {"name": "ace_learning", "description": "Read ACE self-evolution snapshot metadata. Read-only; does not prove liveness.", "risk": "low", "schema": {"type": "object", "properties": {}, "additionalProperties": false}},
-      {"name": "ace_archaeology", "description": "Read bounded archaeology state and append-only lineage receipts.", "risk": "low", "schema": {"type": "object", "properties": {}, "additionalProperties": false}},
-      {"name": "ace_governance", "description": "Read bounded governance snapshot metadata. No policy mutation.", "risk": "low", "schema": {"type": "object", "properties": {}, "additionalProperties": false}},
-      {"name": "ace_query", "description": "Directly query bounded ACE cognition results for map, library, lineage, capability, status, tasks, history, and relations.", "risk": "low", "schema": {"type": "object", "required": ["query"], "properties": {"query": {"type": "string", "maxLength": 256}, "query_type": {"type": "string"}, "limit": {"type": "integer", "minimum": 1, "maximum": 100}}, "additionalProperties": false}},
-      {"name": "ace_health", "description": "Health check endpoint for liveness/readiness probes.", "risk": "low", "schema": {"type": "object", "properties": {}, "additionalProperties": false}},
-      {"name": "ace_metrics", "description": "Return collected metrics (request counts, latency, errors).", "risk": "low", "schema": {"type": "object", "properties": {}, "additionalProperties": false}},
-      {"name": "ace_capsule", "description": "Run one existing ACE worker-capsule command. ACE validates credentials and pool face.", "risk": "low", "schema": {"type": "object", "additionalProperties": false, "required": ["command"], "properties": {"command": {"type": "string"}, "pool": {"type": "string"}, "scratch_name": {"type": "string"}, "task_id": {"type": "string"}, "owner": {"type": "string"}, "actor": {"type": "string"}, "claim": {"type": "string"}, "token": {"type": "integer"}, "reason": {"type": "string"}, "failure_type": {"type": "string"}, "capsule_hash": {"type": "string"}, "payload": {"type": "object"}}}}
+      {
+        "name": "ace_capabilities",
+        "description": "Query ACE bridge capabilities. Read actions do not prove liveness or authorize writes.",
+        "risk": "low",
+        "schema": {
+          "type": "object",
+          "properties": {},
+          "additionalProperties": false
+        }
+      },
+      {
+        "name": "ace_status",
+        "description": "Query ACE persisted status. This does not prove daemon liveness.",
+        "risk": "low",
+        "schema": {
+          "type": "object",
+          "properties": {},
+          "additionalProperties": false
+        }
+      },
+      {
+        "name": "ace_tasks",
+        "description": "Query bounded ACE task summaries without task bodies or credentials.",
+        "risk": "low",
+        "schema": {
+          "type": "object",
+          "properties": {
+            "limit": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100
+            }
+          },
+          "additionalProperties": false
+        }
+      },
+      {
+        "name": "ace_learning",
+        "description": "Read ACE self-evolution snapshot metadata. Read-only; does not prove liveness.",
+        "risk": "low",
+        "schema": {
+          "type": "object",
+          "properties": {},
+          "additionalProperties": false
+        }
+      },
+      {
+        "name": "ace_archaeology",
+        "description": "Read bounded archaeology state and append-only lineage receipts.",
+        "risk": "low",
+        "schema": {
+          "type": "object",
+          "properties": {},
+          "additionalProperties": false
+        }
+      },
+      {
+        "name": "ace_governance",
+        "description": "Read bounded governance snapshot metadata. No policy mutation.",
+        "risk": "low",
+        "schema": {
+          "type": "object",
+          "properties": {},
+          "additionalProperties": false
+        }
+      },
+      {
+        "name": "ace_query",
+        "description": "Directly query bounded ACE cognition results for map, library, lineage, capability, status, tasks, history, and relations.",
+        "risk": "low",
+        "schema": {
+          "type": "object",
+          "required": [
+            "query"
+          ],
+          "properties": {
+            "query": {
+              "type": "string",
+              "maxLength": 256
+            },
+            "query_type": {
+              "type": "string"
+            },
+            "limit": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100
+            }
+          },
+          "additionalProperties": false
+        }
+      },
+      {
+        "name": "ace_health",
+        "description": "Health check endpoint for liveness/readiness probes.",
+        "risk": "low",
+        "schema": {
+          "type": "object",
+          "properties": {},
+          "additionalProperties": false
+        }
+      },
+      {
+        "name": "ace_metrics",
+        "description": "Return collected metrics (request counts, latency, errors).",
+        "risk": "low",
+        "schema": {
+          "type": "object",
+          "properties": {},
+          "additionalProperties": false
+        }
+      },
+      {
+        "name": "ace_capsule",
+        "description": "Run one existing ACE worker-capsule command. ACE validates credentials and pool face.",
+        "risk": "low",
+        "schema": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "command"
+          ],
+          "properties": {
+            "command": {
+              "type": "string",
+              "enum": [
+                "list-pending",
+                "show",
+                "recover",
+                "reclaim",
+                "start",
+                "render",
+                "renew",
+                "submit",
+                "fail"
+              ]
+            },
+            "pool": {
+              "type": "string",
+              "enum": [
+                "production",
+                "scratch"
+              ]
+            },
+            "scratch_name": {
+              "type": "string"
+            },
+            "task_id": {
+              "type": "string"
+            },
+            "owner": {
+              "type": "string"
+            },
+            "actor": {
+              "type": "string"
+            },
+            "claim": {
+              "type": "string"
+            },
+            "token": {
+              "type": "integer"
+            },
+            "reason": {
+              "type": "string"
+            },
+            "failure_type": {
+              "type": "string",
+              "enum": [
+                "retryable",
+                "permanent",
+                "manual_gate",
+                "external_condition"
+              ]
+            },
+            "capsule_hash": {
+              "type": "string"
+            },
+            "payload": {
+              "type": "object"
+            }
+          }
+        }
+      }
     ]
   }
 }
