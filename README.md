@@ -222,24 +222,24 @@ actions refuse with `MUTATION_DISABLED` and unknown actions with
 `UNKNOWN_ACTION`, confirmed both through `ace_capabilities` and by direct
 `handle()` calls.
 
-## Note: the ace-host-shadow plugin
+## Retired: the ace-host-shadow plugin
 
-`.opencode/plugins/ace-host-shadow/` predates the decision to let OpenCode
-execute these tools. It reserves the bare names `ace_status`, `ace_tasks`,
-`ace_capsule` and friends and replaces their `execute` with a defer stub,
-returning `ACE_HOST_DEFERRED`.
+`.opencode/plugins/ace-host-shadow/` has been removed. Its premise was that
+OpenCode must never execute `ace_*` tools because the ACE Host owns the result.
+That premise was refuted when the bridge was registered globally in OpenCode, and
+keeping a component whose reason to exist is gone is worse than removing it.
 
-It only loads when the workspace is this directory, and it no longer matches the
-registered tools: OpenCode names an MCP tool `<server>_<tool>`, so the live
-tools are `ace_readonly_ace_status` and so on. The plugin's `hostOwned` set
-contains the bare names, so rather than intercepting the real tools it would add
-defer placeholders alongside them under the bare names. Expect
-`ACE_HOST_DEFERRED` from any bare-named `ace_*` tool opened in this workspace,
-and use the `ace-readonly` server instead.
+It was also already broken against that registration. OpenCode names an MCP tool
+`<server>_<tool>`, so the live tools surface as `ace_readonly_ace_status` and
+friends, while the plugin's `hostOwned` set held the bare names `ace_status`,
+`ace_tasks`, `ace_capsule` and so on. It therefore never intercepted the real
+tools; it added defer placeholders beside them that return
+`ACE_HOST_DEFERRED`. Its own load log confirms this, listing bare-named
+`ace_status` and `ace_capsule` entries alongside the real tool set.
 
-Whether that plugin is still wanted at all is a design decision for the owner:
-its premise, that OpenCode must never execute these tools, is now contradicted by
-the global registration.
+Recover it with `git checkout 85b9fbd -- .opencode/plugins/ace-host-shadow/` if
+a host ever needs the OpenCode-side tool reservation back. The load log is
+ignored by `.gitignore` and was kept as evidence.
 
 ## Tool surface: one source of truth
 
