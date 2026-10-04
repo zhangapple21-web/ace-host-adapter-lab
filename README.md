@@ -198,15 +198,44 @@ counted exactly once.
 `ace_health` is still not recorded: it is a liveness probe and deliberately
 returns before the timing block.
 
+### Order-dependent metrics, and capsule visibility
+
+`get_metrics()` latched `enabled` from whatever config the *first* caller
+passed, and `config=None` yielded `enabled=False`. Any caller that touched
+`get_metrics()` without a config therefore disabled metrics for the rest of the
+process. This is the same failure that made `ace_metrics` dead originally, just
+reached through call order instead of a bad default, so it now resolves the real
+setting when no config is supplied. A regression test exercises the
+`config=None`-first path.
+
+`ace_capsule` is this bridge's only mutating surface and was invisible in
+`ace_metrics`. It now records both outcomes at the same two single points used by
+the adapter, labelled `capsule:<command>` so they stay distinct from read actions
+and refusals sit next to successes. Governance-relevant question, how many capsule
+operations ran and how many were refused, is now answerable from one place.
+
 ## Test status and known drift
 
-- Python: `test_adapter test_mcp test_capsule` — 9/9 pass.
+- Python: `test_adapter test_mcp test_capsule test_tool_surface test_regressions`
+  — 21/21 pass.
 - Plugin: `node test_pi_plugin.cjs` — passes. It was stale and red before this
   work (`assert.equal(tools.size, 8)` against 10 registered tools, a log line
   claiming "4 tools", and a `refused.reason` assertion against a response shape
   that carries the reason at `error.message`). It now asserts the exact
   ten-name set, covers `ace_learning`/`ace_governance`/`ace_query`/`ace_metrics`,
   and documents why cumulative counters are not assertable through the plugin.
+
+`test_regressions.py` guards the three defects fixed on 2026-10-04, each of which
+was observed rather than hypothesised: the adapter must exit promptly on stdin
+EOF, refusals must be counted exactly once in both counters, and the capsule
+subprocess must be spawned with an explicit `stdin=DEVNULL`. Without these the
+bridge could silently regress to hanging for its full 300s idle timeout, which is
+exactly what the passing Python suite failed to catch before.
+
+Not a defect: `ace-free-worker-roster.json` and `free_models_ace_smoke.ts` look
+like a worker scheduler but are a Free Zone evidence artifact. They are read only
+by that standalone smoke script, never by the bridge, create no TaskPool, schedule
+nothing, and record honest per-model isolation reasons.
 
 `node` is not on PATH on this machine; it lives at
 `C:\Program Files\nodejs\node.exe`. `opencode` is not on PATH either, so
