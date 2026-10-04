@@ -87,8 +87,14 @@ def get_metrics(config=None) -> MetricsCollector:
     """Get global metrics collector instance."""
     global _global_metrics
     if _global_metrics is None:
-        enabled = config.metrics_enabled if config and hasattr(config, 'metrics_enabled') else False
-        _global_metrics = MetricsCollector(enabled=enabled)
+        # Resolve the real setting even when no config is passed. Previously a
+        # config=None first caller latched enabled=False here and silently
+        # disabled metrics for the rest of the process, so the behaviour depended
+        # on call order.
+        if config is None:
+            from bridge_config import get_config as _resolve_config
+            config = _resolve_config()
+        _global_metrics = MetricsCollector(enabled=bool(getattr(config, "metrics_enabled", False)))
     return _global_metrics
 
 

@@ -20,6 +20,7 @@ from typing import Any
 from bridge_config import BridgeConfig, get_config
 from bridge_errors import BridgeError, ErrorCodes, refuse, refuse_simple
 from bridge_logging import get_logger, log_request, log_response, log_error, log_timing
+from bridge_metrics import record_error_metric, record_metric
 
 COMMANDS = {
     "list-pending": set(),
@@ -131,6 +132,12 @@ def invoke(request: dict[str, Any], config: BridgeConfig = None) -> dict[str, An
         if command:
             log_error(logger, request.get("request_id", "unknown"), code, message)
             log_response(logger, request.get("request_id", "unknown"), "REFUSED")
+        # The capsule path is this bridge's only mutating surface, so make it
+        # countable. Labeled capsule:<command> to stay distinct from the
+        # adapter's read actions and to keep refusals visible next to successes.
+        label = f"capsule:{command}" if isinstance(command, str) and command else "capsule:unknown"
+        record_error_metric(label, code, config)
+        record_metric(label, "REFUSED", time.perf_counter() - start_time, config)
         return _refuse_response(code, message, retryable, details)
     
     if not isinstance(request, dict):
@@ -182,6 +189,7 @@ def invoke(request: dict[str, Any], config: BridgeConfig = None) -> dict[str, An
         duration_ms = (time.perf_counter() - start_time) * 1000
         log_timing(logger, request.get("request_id", "unknown"), f"capsule:{command}", duration_ms)
         log_response(logger, request.get("request_id", "unknown"), payload.get("status", "OK"))
+        record_metric(f"capsule:{command}", payload.get("status", "OK"), duration_ms / 1000.0, config)
     
     return payload
 
